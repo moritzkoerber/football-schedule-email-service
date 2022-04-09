@@ -1,0 +1,257 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lambda SNS Stack
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - staging
+      - production
+    Default: staging
+  Version:
+    Type: String
+
+Mappings:
+  Environments:
+    staging:
+      MondayEmailLambdaSchedule: cron(0 6 ? * MON *)
+      ThursdayEmailLambdaSchedule: cron(0 0 ? * THU *)
+      FridayEmailLambdaSchedule: cron(0 13 ? * FRI *)
+    production:
+      MondayEmailLambdaSchedule: cron(0 7 ? * MON *)
+      ThursdayEmailLambdaSchedule: cron(0 1 ? * THU *)
+      FridayEmailLambdaSchedule: cron(0 0 1 1 ? *)
+
+Resources:
+  EmailTextS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'football-text-bucket-${Environment}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      AccessControl: Private
+      Tags:
+        - Key: Stack
+          Value: !Ref AWS::StackName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: FootballEmail
+
+  EmailLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'email-send-lambda-${Environment}'
+      Description: Lambda to create and send out emails
+      Code:
+        S3Bucket: !Ref EmailTextS3Bucket
+        S3Key: email-lambda-deployment-package.zip
+      Handler: handler.handler
+      Runtime: python3.9
+      Timeout: 300
+      MemorySize: 128
+      Role: !GetAtt EmailLambdaRole.Arn
+      Environment:
+        Variables:
+          S3BUCKET: !Ref EmailTextS3Bucket
+          ENVIRONMENT: !Ref Environment
+      Tags:
+        - Key: Stack
+          Value: !Ref AWS::StackName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: FootballEmailLambda
+
+  ParticipationEmailLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'email-participation-lambda-${Environment}'
+      Description: Lambda to check participation and send emails accordingly
+      PackageType: Image
+      Code:
+        ImageUri: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/football_email_lambda-${Environment}:${Version}'
+      Timeout: 300
+      MemorySize: 1024
+      Role: !GetAtt EmailLambdaRole.Arn
+      Environment:
+        Variables:
+          S3BUCKET: !Ref EmailTextS3Bucket
+          ENVIRONMENT: !Ref Environment
+      Tags:
+        - Key: Stack
+          Value: !Ref AWS::StackName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: ParticipationEmailLambda
+
+  EmailLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: ECRAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource:
+                  - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/football_email_lambda-${Environment}'
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource:
+                  - !Sub 'arn:aws:s3:::${EmailTextS3Bucket}'
+                  - !Sub 'arn:aws:s3:::${EmailTextS3Bucket}/*'
+        - PolicyName: SESSendEmail
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource: "*"
+        - PolicyName: SecretsManagerAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:football-email-service-${Environment}-email_adress-*'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  MondayEmailLambdaTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: !Sub 'Send invitation mail on Monday (${Environment})'
+      ScheduleExpression: !FindInMap [Environments, !Ref Environment, MondayEmailLambdaSchedule]
+      Targets:
+        - Arn: !GetAtt EmailLambda.Arn
+          Id: !Sub 'FootballEmail-${Environment}'
+          Input: '{ "email_type" : "monday" }'
+
+  MondayEmailLambdaTriggerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref EmailLambda
+      Principal: events.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !GetAtt MondayEmailLambdaTrigger.Arn
+
+  ThursdayEmailLambdaTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: !Sub 'Send push mail on Thursday (${Environment})'
+      ScheduleExpression: !FindInMap [Environments, !Ref Environment, ThursdayEmailLambdaSchedule]
+      Targets:
+        - Arn: !GetAtt EmailLambda.Arn
+          Id: !Sub 'FootballEmail-${Environment}'
+          Input: '{ "email_type" : "thursday" }'
+
+  ThursdayEmailLambdaTriggerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref EmailLambda
+      Principal: events.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !GetAtt ThursdayEmailLambdaTrigger.Arn
+
+  FridayEmailLambdaTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: !Sub 'Send confirmation/cancellation mail on Friday (${Environment})'
+      ScheduleExpression: !FindInMap [Environments, !Ref Environment, FridayEmailLambdaSchedule]
+      Targets:
+        - Arn: !GetAtt ParticipationEmailLambda.Arn
+          Id: !Sub 'FootballEmail-${Environment}'
+          Input: '{ "email_type" : "friday" }'
+
+  FridayEmailLambdaTriggerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ParticipationEmailLambda
+      Principal: events.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !GetAtt FridayEmailLambdaTrigger.Arn
+
+  EmailLambdaAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'Alarm if an error occurs in EmailLambda (${Environment})'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref EmailLambda
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: ignore
+      Threshold: 1
+      Statistic: Sum
+      Period: 600
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !ImportValue FootballEmailNotifications
+      OKActions:
+        - !ImportValue FootballEmailNotifications
+
+  ParticipationEmailLambdaAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'Alarm if an error occurs in ParticipationEmailLambda (${Environment})'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ParticipationEmailLambda
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: ignore
+      Threshold: 1
+      Statistic: Sum
+      Period: 600
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !ImportValue FootballEmailNotifications
+      OKActions:
+        - !ImportValue FootballEmailNotifications
+
+  SourceEmailAddressSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: !Sub 'Source email adress for football email service (${Environment})'
+      Name: !Sub 'football-email-service-${Environment}-email_adress-source'
+
+  DestinationEmailAddressSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: !Sub 'Destination email adress for football email service (${Environment})'
+      Name: !Sub 'football-email-service-${Environment}-email_adress-destination'
+
+  CancellationEmailAddressSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: !Sub 'Cancellation email adress for football email service (${Environment})'
+      Name: !Sub 'football-email-service-${Environment}-email_adress-cancellation'
