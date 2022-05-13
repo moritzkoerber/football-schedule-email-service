@@ -17,11 +17,11 @@ Mappings:
     staging:
       MondayEmailLambdaSchedule: cron(0 6 ? * MON *)
       ThursdayEmailLambdaSchedule: cron(0 0 ? * THU *)
-      FridayEmailLambdaSchedule: cron(0 13 ? * FRI *)
+      FridayEmailLambdaSchedule: cron(0 8 ? * FRI *)
     production:
       MondayEmailLambdaSchedule: cron(0 7 ? * MON *)
       ThursdayEmailLambdaSchedule: cron(0 1 ? * THU *)
-      FridayEmailLambdaSchedule: cron(0 0 1 1 ? *)
+      FridayEmailLambdaSchedule: cron(0 9 ? * FRI *)
 
 Resources:
   EmailTextS3Bucket:
@@ -150,6 +150,7 @@ Resources:
         - Arn: !GetAtt EmailLambda.Arn
           Id: !Sub 'FootballEmail-${Environment}'
           Input: '{ "email_type" : "monday" }'
+      State: DISABLED
 
   MondayEmailLambdaTriggerPermission:
     Type: AWS::Lambda::Permission
@@ -169,6 +170,7 @@ Resources:
         - Arn: !GetAtt EmailLambda.Arn
           Id: !Sub 'FootballEmail-${Environment}'
           Input: '{ "email_type" : "thursday" }'
+      State: DISABLED
 
   ThursdayEmailLambdaTriggerPermission:
     Type: AWS::Lambda::Permission
@@ -188,6 +190,7 @@ Resources:
         - Arn: !GetAtt ParticipationEmailLambda.Arn
           Id: !Sub 'FootballEmail-${Environment}'
           Input: '{ "email_type" : "friday" }'
+      State: DISABLED
 
   FridayEmailLambdaTriggerPermission:
     Type: AWS::Lambda::Permission
