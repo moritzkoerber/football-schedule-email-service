@@ -74,7 +74,7 @@ def get_participation(url):
         ],
     )
     game_status = "Abgesagt:"
-    participants_str = ""
+    participants_str = "Leider zu wenig Spieler!"
     if sum(e[1] for e in participation) >= 8:
         game_status = "Wir spielen!"
         participants_str = (

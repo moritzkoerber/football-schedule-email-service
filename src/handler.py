@@ -21,7 +21,8 @@ def handler(event, context):
         current_iso_week, _S3BUCKET
     )
     game_status = ""
-    participants = "Leider zu wenig Spieler!"
+    participants = ""
+
     if email_type == "friday":
         from get_participation import get_participation
 
