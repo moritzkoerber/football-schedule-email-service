@@ -17,8 +17,9 @@ def send_email(
 
     source_email_address = _get_secret("source")
     destination_email_address = _get_secret("destination")
+    arn = destination_email_address.split("@")[1]
 
-    ses_client = boto3.client("ses")
+    ses_client = boto3.client("ses", region_name="eu-central-1")
 
     response = ses_client.send_email(
         Source=source_email_address,
@@ -33,7 +34,9 @@ def send_email(
                 "Text": {"Data": email_txt, "Charset": "utf-8"},
             },
         },
-        SourceArn=f"arn:aws:ses:eu-central-1:820381935377:identity/{source_email_address}",
-        ReturnPathArn=f"arn:aws:ses:eu-central-1:820381935377:identity/{source_email_address}",
+        ReplyToAddresses=[source_email_address],
+        ReturnPath=source_email_address,
+        SourceArn=f"arn:aws:ses:eu-central-1:820381935377:identity/{arn}",
+        ReturnPathArn=f"arn:aws:ses:eu-central-1:820381935377:identity/{arn}",
     )
     print(response)
