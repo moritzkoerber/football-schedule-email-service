@@ -15,11 +15,9 @@ def extract_game_datetimes(current_iso_week: int, s3_bucket: str):
         .splitlines()
     )
 
-    regex_dates = re.compile(
-        r"\b(\d{1,2}\.\d{1,2}\.\d{4})(?:, \d{2}:\d{2} Uhr – \d{2}:\d{2} Uhr)\b"
-    )
+    regex_dates = re.compile(r"\b\d{1,2}\.\d{1,2}\.\d{4}\b")
 
-    dates = [regex_dates.search(e).group(1) for e in txt]
+    dates = [regex_dates.search(e).group() for e in txt]
     dates_iso_weeks = (
         pd.to_datetime(pd.Series(dates), format="%d.%m.%Y")
         .dt.isocalendar()["week"]
@@ -50,8 +48,8 @@ def create_email_text(
     participants_str: str,
 ):
     current_game_datetime = re.search(
-        r"(.* Uhr)(?:: )", current_game_datetime_w_url
-    ).group(1)
+        r".* Uhr(?=[:,]?\s[^\d])", current_game_datetime_w_url
+    ).group()
 
     prefix = {
         "monday": "Bitte eintragen:",
@@ -61,10 +59,9 @@ def create_email_text(
 
     email_txt = f"""Liebe Fußball-Freunde,
 
-Bitte beachtet folgende Regeln und tragt euch in folgende doodle ein:
-    - Wenn ihr Leute mitbringt, tragt bitte ihre Namen ein und nicht +1 bei euch o. Ä.
-    - Verbindliche Zu- oder Absage bis Donnerstag! Wer Freitagmorgen zugesagt hat, zahlt bei spontanem Nicht-Erscheinen anteilig die Reservierungsgebühr oder kümmert sich eigenständig um Ersatz.
-    - Es entfallen alle Zugangsregeln zur SoccArena!
+Bitte beachtet folgende Regeln und tragt euch in die doodle ein:
+  – Wenn ihr Leute mitbringt, tragt bitte deren Namen ein und nicht +1 bei euch o. Ä.
+  – Verbindliche Zu- oder Absage bis Donnerstag! Wenn ihr doch nicht könnt, sorgt bitte für Ersatz – wir müssen spätestens 48 h vorher stornieren, wenn nicht genug Leute kommen.
 
 
 {prefix} {current_game_datetime_w_url.strip()} {participants_str}
