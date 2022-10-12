@@ -1,5 +1,5 @@
 ---
-name: Deploy
+name: Manual Deployment
 
 on:
   workflow_dispatch:
@@ -20,6 +20,7 @@ env:
 permissions:
   id-token: write
   contents: write
+
 jobs:
   deploy_lambda_zip:
     name: Deploy Lambda zip file
@@ -37,7 +38,7 @@ jobs:
         run: pip install pipenv
 
       - name: Create requirements
-        run: pipenv lock -r > requirements.txt
+        run: pipenv requirements > requirements.txt
 
       - name: build zip
         run: |
