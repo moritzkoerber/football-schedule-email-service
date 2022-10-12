@@ -59,7 +59,7 @@ def create_email_text(
 
     email_txt = f"""Liebe Fußball-Freunde,
 
-Bitte beachtet folgende Regeln und tragt euch in die doodle ein:
+bitte beachtet folgende Regeln und tragt euch in die doodle ein:
   – Wenn ihr Leute mitbringt, tragt bitte deren Namen ein und nicht +1 bei euch o. Ä.
   – Verbindliche Zu- oder Absage bis Donnerstag! Wenn ihr doch nicht könnt, sorgt bitte für Ersatz – wir müssen spätestens 48 h vorher stornieren, wenn nicht genug Leute kommen.
 
@@ -72,7 +72,7 @@ Weitere Termine:
 Die Google-Gruppe darf jederzeit an weitere Interessenten weitergeleitet und geteilt werden.
 
 Viele Grüße
-Jonas+Moritz
+Moritz
     """
     return f"{prefix} {current_game_datetime}", email_txt
 
