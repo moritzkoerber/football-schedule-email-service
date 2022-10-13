@@ -53,22 +53,21 @@ def get_participation(url):
 
     logging.info("Grabbing user_list")
     user_list = driver.find_element(
-        by=By.CLASS_NAME, value="UserList__list-participants-list"
+        by=By.CLASS_NAME,
+        value="votes-participants-module_votes-participants__list__xyqSV",
     )
 
     participation = zip(
         [
-            x.get_dom_attribute("name")
-            for x in user_list.find_elements(
-                by=By.CLASS_NAME, value="UserAvatarWithSubIcon"
-            )
+            name
+            for x in user_list.find_elements(by=By.CLASS_NAME, value="chakra-text")
+            if (name := x.get_attribute("innerText")) != "Organizer"
         ],
         [
             int(
-                x.get_dom_attribute("class")
-                .split()[1]
-                .replace("Icon--cannot-attend", "0")
-                .replace("Icon---check", "1")
+                x.get_dom_attribute("aria-label")
+                .replace("Cross", "0")
+                .replace("Checkmark", "1")
             )
             for x in user_list.find_elements(by=By.CSS_SELECTOR, value="svg")
         ],
