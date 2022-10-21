@@ -67,6 +67,7 @@ def get_participation(url):
             int(
                 x.get_dom_attribute("aria-label")
                 .replace("Cross", "0")
+                .replace("BracketsCheck", "0")
                 .replace("Checkmark", "1")
             )
             for x in user_list.find_elements(by=By.CSS_SELECTOR, value="svg")
