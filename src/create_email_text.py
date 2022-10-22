@@ -63,7 +63,6 @@ bitte beachtet folgende Regeln und tragt euch in die doodle ein:
   – Wenn ihr Leute mitbringt, tragt bitte deren Namen ein und nicht +1 bei euch o. Ä.
   – Verbindliche Zu- oder Absage bis Donnerstag! Wenn ihr doch nicht könnt, sorgt bitte für Ersatz – wir müssen spätestens 48 h vorher stornieren, wenn nicht genug Leute kommen.
 
-
 {prefix} {current_game_datetime_w_url.strip()} {participants_str}
 
 Weitere Termine:

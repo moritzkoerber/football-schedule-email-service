@@ -3,7 +3,7 @@ ARG FUNCTION_DIR="/function"
 FROM python:3.9-bullseye as build-image
 
 RUN apt-get update \
-    && apt-get install -y -f --no-install-recommends unzip=6.0-26 \
+    && apt-get install -y -f --no-install-recommends unzip=6.0-26+deb11u1 \
     g++ \
     make \
     cmake \
@@ -25,7 +25,7 @@ WORKDIR ${FUNCTION_DIR}
 COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
 
 RUN apt-get update \
-    && apt-get install -y -f --no-install-recommends unzip=6.0-26 \
+    && apt-get install -y -f --no-install-recommends unzip=6.0-26+deb11u1 \
     wget=1.21-1+deb11u1 \
     libnss3-dev=2:3.61-1+deb11u2 \
     libdbus-glib-1-2=0.110-6 \

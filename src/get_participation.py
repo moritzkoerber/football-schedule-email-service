@@ -12,6 +12,29 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.remote.remote_connection import LOGGER
+from selenium.webdriver.remote.webelement import WebElement
+
+
+def _create_participation_list(user_list: WebElement) -> list:
+    return list(
+        zip(
+            [
+                name
+                for x in user_list.find_elements(by=By.CLASS_NAME, value="chakra-text")
+                if (name := x.get_attribute("innerText")) != "Organizer"
+            ],
+            [
+                int(
+                    x.get_dom_attribute("aria-label")
+                    .replace("Cross", "0")
+                    .replace("BracketsCheck", "0")
+                    .replace("Checkmark", "1")
+                )
+                for x in user_list.find_elements(by=By.CSS_SELECTOR, value="svg")
+            ],
+        )
+    )
+
 
 LOGGER.setLevel(logging.DEBUG)
 logging.getLogger().setLevel(logging.INFO)
@@ -57,26 +80,26 @@ def get_participation(url):
         value="votes-participants-module_votes-participants__list__xyqSV",
     )
 
-    participation = zip(
-        [
-            name
-            for x in user_list.find_elements(by=By.CLASS_NAME, value="chakra-text")
-            if (name := x.get_attribute("innerText")) != "Organizer"
-        ],
-        [
-            int(
-                x.get_dom_attribute("aria-label")
-                .replace("Cross", "0")
-                .replace("BracketsCheck", "0")
-                .replace("Checkmark", "1")
-            )
-            for x in user_list.find_elements(by=By.CSS_SELECTOR, value="svg")
-        ],
-    )
+    logging.info("Get participation")
+    participation = _create_participation_list(user_list)
+
+    logging.info("Scrolling once to last element:")
+    with contextlib.suppress(TypeError):
+        user_list.find_elements(by=By.CLASS_NAME, value="chakra-text")[
+            -1
+        ].location_once_scrolled_into_view()
+
+    logging.info("Get participation once more")
+    participation += _create_participation_list(user_list)
+
+    # deduplicate
+    participation = list(set(participation))
+
+    logging.info(f"Got participants: {', '.join(str(x) for x in participation)}")
     game_status = "Abgesagt:"
     participants_str = "Leider zu wenig Spieler!"
     if sum(e[1] for e in participation) >= 8:
-        game_status = "Wir spielen!"
+        game_status = "Wir spielen:"
         participants_str = (
             f"({', '.join(e[0] for e in filter(lambda x: x[1] == 1, participation))})"
         )
