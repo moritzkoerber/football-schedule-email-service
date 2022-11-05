@@ -45,7 +45,7 @@ RUN wget --progress=dot:giga https://github.com/mozilla/geckodriver/releases/dow
     && tar zxvf ~/geckodriver-v0.31.0-linux64.tar.gz -C /opt \
     && ln -s /opt/geckodriver /usr/local/bin/geckodriver
 
-RUN pip install --no-cache-dir --target ${FUNCTION_DIR} selenium==4.1.3 boto3==1.21.46 pandas==1.4.2
+RUN pip install --no-cache-dir --target ${FUNCTION_DIR} selenium==4.5.0 boto3==1.21.46 pandas==1.4.2
 
 ENV HOME=/tmp
 
