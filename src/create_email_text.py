@@ -46,6 +46,7 @@ def create_email_text(
     upcoming_five_games_datetimes: str,
     game_status: str,
     participants_str: str,
+    poll_name: str = "nuudel",
 ):
     current_game_datetime = re.search(
         r".* Uhr(?=[:,]?\s[^\d])", current_game_datetime_w_url
@@ -59,7 +60,7 @@ def create_email_text(
 
     email_txt = f"""Liebe Fußball-Freunde,
 
-bitte beachtet folgende Regeln und tragt euch in die doodle ein:
+bitte beachtet folgende Regeln und tragt euch in die {poll_name} ein:
   – Wenn ihr Leute mitbringt, tragt bitte deren Namen ein und nicht +1 bei euch o. Ä.
   – Verbindliche Zu- oder Absage bis Donnerstag! Wenn ihr doch nicht könnt, sorgt bitte für Ersatz – wir müssen spätestens 48 h vorher stornieren, wenn nicht genug Leute kommen.
 
