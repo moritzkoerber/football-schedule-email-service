@@ -1,4 +1,3 @@
----
 name: Manual Deployment
 
 on:
@@ -13,6 +12,8 @@ on:
         required: true
 
 concurrency: ${{ github.event.inputs.environment }}
+
+run-name: ${{ github.event.inputs.environment }}
 
 env:
   PYTHON_VERSION: '3.9.9'
