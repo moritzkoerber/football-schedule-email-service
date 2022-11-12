@@ -24,7 +24,7 @@ def handler(event, context):
     participants = ""
 
     if email_type == "friday":
-        from get_participation import get_participation
+        from get_participation_nuudel import get_participation
 
         try:
             current_game_url = re.search(
