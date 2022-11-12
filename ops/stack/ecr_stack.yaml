@@ -19,4 +19,4 @@ Resources:
       ImageTagMutability: MUTABLE
       ImageScanningConfiguration:
         ScanOnPush: true
-      RepositoryName: !Sub 'football_email_lambda-${Environment}'
+      RepositoryName: !Sub 'football-email-participation-lambda-${Environment}'

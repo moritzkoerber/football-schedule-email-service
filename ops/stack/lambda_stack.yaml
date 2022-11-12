@@ -74,7 +74,7 @@ Resources:
       Description: Lambda to check participation and send emails accordingly
       PackageType: Image
       Code:
-        ImageUri: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/football_email_lambda-${Environment}:${Version}'
+        ImageUri: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/football-email-participation-lambda-${Environment}:${Version}'
       Timeout: 300
       MemorySize: 1024
       Role: !GetAtt EmailLambdaRole.Arn
@@ -110,7 +110,7 @@ Resources:
                   - ecr:BatchGetImage
                   - ecr:GetDownloadUrlForLayer
                 Resource:
-                  - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/football_email_lambda-${Environment}'
+                  - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/football-email-participation-lambda-${Environment}'
         - PolicyName: S3Access
           PolicyDocument:
             Version: '2012-10-17'
@@ -150,7 +150,7 @@ Resources:
         - Arn: !GetAtt EmailLambda.Arn
           Id: !Sub 'FootballEmail-${Environment}'
           Input: '{ "email_type" : "monday" }'
-      State: DISABLED
+      State: ENABLED
 
   MondayEmailLambdaTriggerPermission:
     Type: AWS::Lambda::Permission
@@ -170,7 +170,7 @@ Resources:
         - Arn: !GetAtt EmailLambda.Arn
           Id: !Sub 'FootballEmail-${Environment}'
           Input: '{ "email_type" : "thursday" }'
-      State: DISABLED
+      State: ENABLED
 
   ThursdayEmailLambdaTriggerPermission:
     Type: AWS::Lambda::Permission
@@ -190,7 +190,7 @@ Resources:
         - Arn: !GetAtt ParticipationEmailLambda.Arn
           Id: !Sub 'FootballEmail-${Environment}'
           Input: '{ "email_type" : "friday" }'
-      State: DISABLED
+      State: ENABLED
 
   FridayEmailLambdaTriggerPermission:
     Type: AWS::Lambda::Permission
