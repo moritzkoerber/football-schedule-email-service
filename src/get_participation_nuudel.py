@@ -61,7 +61,13 @@ def get_participation(url):
     game_status = "Abgesagt:"
     participants_str = "Leider zu wenig Spieler!"
 
-    if (num_players := sum(e[1] for e in participation)) >= 8:
+    if (
+        num_players := int(
+            driver.find_element(by=By.CLASS_NAME, value="yes-count").get_attribute(
+                "innerText"
+            )
+        )
+    ) >= 8:
         game_status = "Wir spielen:"
         participants_str = f"({num_players} Spieler: {', '.join(e[0] for e in filter(lambda x: x[1] == 1, participation))})"
     return game_status, participants_str
