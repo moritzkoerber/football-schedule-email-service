@@ -49,7 +49,7 @@ Resources:
       Description: Lambda to create and send out emails
       Code:
         S3Bucket: !Ref EmailTextS3Bucket
-        S3Key: email-lambda-deployment-package.zip
+        S3Key: !Sub 'email-lambda-deployment-package-${Version}.zip'
       Handler: handler.handler
       Runtime: python3.9
       Timeout: 300

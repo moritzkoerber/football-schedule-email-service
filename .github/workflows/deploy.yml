@@ -11,10 +11,13 @@ on:
           - production
         description: Deploy environment; staging or production
         required: true
+      version:
+        description: 'For example "v2"'
+        required: true
 
 concurrency: ${{ github.event.inputs.environment }}
 
-run-name: ${{ github.event.inputs.environment }}
+run-name: Deploy ${{ github.event.inputs.version }} to ${{ github.event.inputs.environment }}
 
 env:
   PYTHON_VERSION: '3.9.9'
@@ -25,14 +28,14 @@ permissions:
 
 jobs:
   deploy_lambda_zip:
-    name: Deploy Lambda zip file
+    name: Deploy Lambda zip file and stack
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -46,14 +49,27 @@ jobs:
         run: |
           pip install --target package -r requirements.txt --no-deps
           rsync -a --exclude='**/__pycache__*' src/. package/
-          pushd package && zip -r ../email-lambda-deployment-package.zip . && popd
+          pushd package && zip -r ../email-lambda-deployment-package-${{ github.event.inputs.version }}.zip . && popd
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GithubFootballEmailOIDCRole
           aws-region: eu-central-1
 
       - name: Upload to s3
         run: |
-          aws s3 cp email-lambda-deployment-package.zip s3://football-text-bucket-${{ github.event.inputs.environment }}/email-lambda-deployment-package.zip
+          aws s3 cp email-lambda-deployment-package-${{ github.event.inputs.version }}.zip s3://football-text-bucket-${{ github.event.inputs.environment }}/email-lambda-deployment-package-${{ github.event.inputs.version }}.zip
+
+      - name: Deploy stacks
+        if: contains(github.event.inputs.version, 'v')
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: football-lambda-stack-${{ github.event.inputs.environment }}
+          template: ops/stack/lambda_stack.yaml
+          no-fail-on-empty-changeset: '1'
+          termination-protection: '1'
+          capabilities: CAPABILITY_NAMED_IAM
+          parameter-overrides: >-
+            Environment=${{ github.event.inputs.environment }},
+            Version=${{ github.event.inputs.version }}
