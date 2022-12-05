@@ -31,7 +31,7 @@ def handler(event, context):
                 r"\bhttps?://[\w/./]+\b", current_game_datetime_w_url
             ).group()
         except AttributeError as e:
-            logging.error("Could parse url")
+            logging.error("Could not parse url")
             raise AttributeError(e)
 
         game_status, participants = get_participation(current_game_url)
