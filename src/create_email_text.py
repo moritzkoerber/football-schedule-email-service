@@ -75,7 +75,3 @@ Viele Grüße
 Moritz
     """
     return f"{prefix} {current_game_datetime}", email_txt
-
-
-def create_cancel_socca5_email_text():
-    pass
