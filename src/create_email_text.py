@@ -15,9 +15,9 @@ def extract_game_datetimes(current_iso_week: int, s3_bucket: str):
         .splitlines()
     )
 
-    regex_dates = re.compile(r"\b\d{1,2}\.\d{1,2}\.\d{4}\b")
+    regex_dates = re.compile(r"\b\d{1,2}\.\d{1,2}\.(\d{1,2}|\d{4})(?!\d)\b")
 
-    dates = [regex_dates.search(e).group() for e in txt]
+    dates = [regex_dates.search(e).group().replace(".23", ".2023") for e in txt]
     dates_iso_weeks = (
         pd.to_datetime(pd.Series(dates), format="%d.%m.%Y")
         .dt.isocalendar()["week"]

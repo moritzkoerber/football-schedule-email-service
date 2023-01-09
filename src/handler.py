@@ -28,7 +28,7 @@ def handler(event, context):
 
         try:
             current_game_url = re.search(
-                r"\bhttps?://[\w/./]+\b", current_game_datetime_w_url
+                r"\bhttps?://[\w\./]+\b", current_game_datetime_w_url
             ).group()
         except AttributeError as e:
             logging.error("Could not parse url")
